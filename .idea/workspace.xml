@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2f290660-3042-4e3d-853a-f577153f7a26" name="Changes" comment="US2024030701232 上报指定时间戳">
+      <change afterPath="$PROJECT_DIR$/.cid/lts-go-sdk.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/LICENSE" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/client.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/client_consumer_worker.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/const.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/interfaces.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/log_consumer_heartbeat.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/log_shard_consumer.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/singer.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/consumer/task.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/accumulator.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/batch.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/client.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/common.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/io_thread_pool.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/io_worker.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/log.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/log_store.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/mover.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/producer.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/request.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/result.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/retry_queue.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/producer/singer.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sample/consumer_sample.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sample/producer_sample.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../../soft/develop/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
+  </component>
+  <component name="GitToolBoxStore">
+    <option name="projectConfigVersion" value="5" />
+    <option name="recentBranches">
+      <RecentBranches>
+        <option name="branchesForRepo">
+          <list>
+            <RecentBranchesForRepo>
+              <option name="branches">
+                <list>
+                  <RecentBranch>
+                    <option name="branchName" value="out.github" />
+                    <option name="lastUsedInstant" value="1736237193" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="master" />
+                    <option name="lastUsedInstant" value="1736237169" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="tm/out" />
+                    <option name="lastUsedInstant" value="1715937389" />
+                  </RecentBranch>
+                </list>
+              </option>
+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+            </RecentBranchesForRepo>
+          </list>
+        </option>
+      </RecentBranches>
+    </option>
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/../../../go_path/pkg/mod/golang.org/x/crypto@v0.9.0/hkdf/hkdf.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/../../../../soft/develop/go/src/encoding/hex/hex.go" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2ewd0LGVdyA2b5jBu4XTNHmve74" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.automatic.dependencies.download&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;out.github&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/code/icagent/SDK/lts-go-sdk&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;go.vgo&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="lts-go-sdk" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="FILE" />
+      <package value="github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/sample/producer_sample.go" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
+        <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="out.github" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="out.github" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="US2024030701232 上报指定时间戳" />
+    <option name="LAST_COMMIT_MESSAGE" value="US2024030701232 上报指定时间戳" />
+  </component>
+  <component name="VgoProject">
+    <environment>
+      <map>
+        <entry key="GO111MODULE" value="on" />
+        <entry key="GONOSUMDB" value="*" />
+        <entry key="GOPROXY" value="https://cmc.centralrepo.rnd.huawei.com/cbu-go,direct" />
+        <entry key="GOSUMB" value="off" />
+      </map>
+    </environment>
+    <settings-migrated>true</settings-migrated>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/producer/request.go</url>
+          <line>194</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
