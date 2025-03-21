@@ -22,20 +22,29 @@ type Batch struct {
 	streamId             string
 	result               *Result
 	maxReservedAttempts  int
+	logType              int
+	structLogs           *StructLogs
 }
 
 func initProducerBatch(logData interface{}, callBackFunc CallBack, groupId, streamId string, config *Config) *Batch {
-	var logs []*Log
-
+	var logGroup = &LogGroup{}
+	var structLogs = &StructLogs{}
+	logType := LogTypeNormal
 	if log, ok := logData.(*Log); ok {
+		var logs []*Log
 		logs = append(logs, log)
+		logGroup.Logs = logs
 	} else if logList, ok := logData.([]*Log); ok {
+		var logs []*Log
 		logs = append(logs, logList...)
+		logGroup.Logs = logs
+	} else if structLog, ok := logData.(*StructLog); ok {
+		var structLogList []*StructLog
+		structLogList = append(structLogList, structLog)
+		structLogs.Logs = structLogList
+		logType = LogTypeStruct
 	}
 
-	logGroup := &LogGroup{
-		Logs: logs,
-	}
 	currentTimeMs := GetTimeMs(time.Now().UnixNano())
 	producerBatch := &Batch{
 		logGroup:             logGroup,
@@ -49,8 +58,14 @@ func initProducerBatch(logData interface{}, callBackFunc CallBack, groupId, stre
 		streamId:             streamId,
 		result:               initResult(),
 		maxReservedAttempts:  config.MaxReservedAttempts,
+		structLogs:           structLogs,
+		logType:              logType,
 	}
-	producerBatch.totalDataSize = int64(producerBatch.logGroup.Size())
+	if 0 == logType {
+		producerBatch.totalDataSize = int64(producerBatch.logGroup.Size())
+	} else {
+		producerBatch.totalDataSize = int64(producerBatch.structLogs.Size())
+	}
 
 	if callBackFunc != nil {
 		producerBatch.callBackList = append(producerBatch.callBackList, callBackFunc)
@@ -84,6 +99,8 @@ func (producerBatch *Batch) addLogToLogGroup(log interface{}) {
 		producerBatch.logGroup.Logs = append(producerBatch.logGroup.Logs, mlog)
 	} else if logList, ok := log.([]*Log); ok {
 		producerBatch.logGroup.Logs = append(producerBatch.logGroup.Logs, logList...)
+	} else if structLog, ok := log.(*StructLog); ok {
+		producerBatch.structLogs.Logs = append(producerBatch.structLogs.Logs, structLog)
 	}
 }
 

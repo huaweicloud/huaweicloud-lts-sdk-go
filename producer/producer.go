@@ -112,7 +112,7 @@ func (producer *Producer) SendLog(groupId, streamId string, log *Log) error {
 	if err != nil {
 		return err
 	}
-	return producer.logAccumulator.addLogToProducerBatch(groupId, streamId, log, nil)
+	return producer.logAccumulator.addLogToProducerBatch(groupId, streamId, log, nil, LogTypeNormal)
 }
 
 func (producer *Producer) waitTime() error {
@@ -151,5 +151,35 @@ func (producer *Producer) SendLogWithCallBack(groupId, streamId string, log *Log
 	if err != nil {
 		return err
 	}
-	return producer.logAccumulator.addLogToProducerBatch(groupId, streamId, log, callback)
+	return producer.logAccumulator.addLogToProducerBatch(groupId, streamId, log, callback, LogTypeNormal)
+}
+
+func (producer *Producer) SendLogStruct(groupId, streamId string, structLog *StructLog) error {
+	err := producer.waitTime()
+	if err != nil {
+		return err
+	}
+	nowNano := time.Now().UnixNano()
+	if 0 == structLog.Time {
+		structLog.Time = nowNano / 1000 / 1000
+	}
+	if 0 == structLog.LineNum {
+		structLog.LineNum = nowNano
+	}
+	return producer.logAccumulator.addLogToProducerBatch(groupId, streamId, structLog, nil, LogTypeStruct)
+}
+
+func (producer *Producer) SendLogStructWithCallBack(groupId, streamId string, structLog *StructLog, callback CallBack) error {
+	err := producer.waitTime()
+	if err != nil {
+		return err
+	}
+	nowNano := time.Now().UnixNano()
+	if 0 == structLog.Time {
+		structLog.Time = nowNano / 1000 / 1000
+	}
+	if 0 == structLog.LineNum {
+		structLog.LineNum = nowNano
+	}
+	return producer.logAccumulator.addLogToProducerBatch(groupId, streamId, structLog, callback, LogTypeStruct)
 }

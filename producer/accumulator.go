@@ -3,6 +3,7 @@ package producer
 import (
 	"errors"
 	uberAtomic "go.uber.org/atomic"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -32,12 +33,12 @@ func initLogAccumulator(config *Config, ioWorker *IoWorker, threadPool *IoThread
 }
 
 func (logAccumulator *LogAccumulator) addLogToProducerBatch(groupId, streamId string,
-	logData interface{}, callback CallBack) error {
+	logData interface{}, callback CallBack, logType int) error {
 	if logAccumulator.shutDownFlag.Load() {
 		return errors.New("Producer has started and shut down and cannot write to new logs")
 	}
 
-	key := logAccumulator.getKeyString(groupId, streamId)
+	key := logAccumulator.getKeyString(groupId, streamId, logType)
 	defer logAccumulator.lock.Unlock()
 	logAccumulator.lock.Lock()
 	if mlog, ok := logData.(*Log); ok {
@@ -55,9 +56,17 @@ func (logAccumulator *LogAccumulator) addLogToProducerBatch(groupId, streamId st
 			atomic.AddInt64(&producerBatch.totalDataSize, logListSize)
 			atomic.AddInt64(&logAccumulator.producer.producerLogGroupSize, logListSize)
 			logAccumulator.addOrSendProducerBatch(key, groupId, streamId, producerBatch, logList, callback)
-
 		} else {
 			logAccumulator.createNewProducerBatch(logList, callback, key, groupId, streamId)
+		}
+	} else if structLog, ok := logData.(*StructLog); ok {
+		if producerBatch, ok := logAccumulator.logGroupData[key]; ok == true {
+			logListSize := int64(GetStructLogListSize(structLog))
+			atomic.AddInt64(&producerBatch.totalDataSize, logListSize)
+			atomic.AddInt64(&logAccumulator.producer.producerLogGroupSize, logListSize)
+			logAccumulator.addOrSendProducerBatch(key, groupId, streamId, producerBatch, structLog, callback)
+		} else {
+			logAccumulator.createNewProducerBatch(structLog, callback, key, groupId, streamId)
 		}
 	} else {
 		return errors.New("Invalid logType")
@@ -66,11 +75,13 @@ func (logAccumulator *LogAccumulator) addLogToProducerBatch(groupId, streamId st
 
 }
 
-func (logAccumulator *LogAccumulator) getKeyString(groupId, streamId string) string {
+func (logAccumulator *LogAccumulator) getKeyString(groupId, streamId string, logType int) string {
 	var key strings.Builder
 	key.WriteString(groupId)
 	key.WriteString(Delimiter)
 	key.WriteString(streamId)
+	key.WriteString(Delimiter)
+	key.WriteString(strconv.Itoa(logType))
 	key.WriteString(Delimiter)
 	return key.String()
 }
@@ -100,6 +111,9 @@ func (logAccumulator *LogAccumulator) createNewProducerBatch(logType interface{}
 		logAccumulator.logGroupData[key] = newProducerBatch
 	} else if logList, ok := logType.([]*Log); ok {
 		newProducerBatch := initProducerBatch(logList, callback, groupId, streamId, logAccumulator.producerConfig)
+		logAccumulator.logGroupData[key] = newProducerBatch
+	} else if structLog, ok := logType.(*StructLog); ok {
+		newProducerBatch := initProducerBatch(structLog, callback, groupId, streamId, logAccumulator.producerConfig)
 		logAccumulator.logGroupData[key] = newProducerBatch
 	}
 }
