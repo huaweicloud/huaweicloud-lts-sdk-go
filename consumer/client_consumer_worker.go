@@ -1,6 +1,8 @@
 package consumer
 
 import (
+	"github.com/sirupsen/logrus"
+	"log/slog"
 	"time"
 )
 
@@ -81,6 +83,8 @@ func (w *ClientConsumerWorker) getLogShardConsumer(shardId string) *LogShardCons
 		fetchDataTaskIsExist:       false,
 	}
 	w.shardConsumer[shardId] = consumer
+	slog.Info("create a consumer fo shard", "shard", shardId)
+	logrus.WithField("shard", shardId).Info("create a consumer fo shard")
 	go consumer.InitializeTask()
 	consumer.taskIsExist = true
 	return consumer
