@@ -44,6 +44,19 @@ func main() {
 				if err != nil {
 					fmt.Println(err)
 				}
+				var sLog producer.StructLog
+				logContent := make(map[string]string)
+				logContent["keyA"] = "valueA"
+				logContent["keyB"] = "valueB"
+				logContent1 := make(map[string]string)
+				logContent["keyA1"] = "valueA1"
+				logContent["keyB1"] = "valueB1"
+				sLog.Contents = append(sLog.Contents, logContent1)
+
+				err := producerInstance.SendLogStruct("groupId", "streamId", sLog)
+				if nil != err {
+					continue
+				}
 
 				time.Sleep(100 * time.Microsecond)
 			}

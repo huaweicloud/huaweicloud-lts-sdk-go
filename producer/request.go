@@ -77,7 +77,7 @@ func request(project *LogProject, method, uri string, headers map[string]string,
 	body []byte) (*http.Response, error) {
 
 	var r *http.Response
-	var slsErr error
+	var logErr error
 	var err error
 
 	project.init()
@@ -85,14 +85,14 @@ func request(project *LogProject, method, uri string, headers map[string]string,
 	defer cancel()
 
 	err = RetryWithCondition(ctx, backoff.NewExponentialBackOff(), func() (bool, error) {
-		r, slsErr = realRequest(ctx, project, method, uri, headers, body)
-		return retryWriteErrorCheck(ctx, slsErr)
+		r, logErr = realRequest(ctx, project, method, uri, headers, body)
+		return retryWriteErrorCheck(ctx, logErr)
 	})
 
 	if err != nil {
 		return r, err
 	}
-	return r, slsErr
+	return r, logErr
 }
 
 func (p *LogProject) WithRequestTimeout(timeout time.Duration) *LogProject {
@@ -189,7 +189,7 @@ func realRequest(ctx context.Context, project *LogProject, method, uri string, h
 		return nil, err
 	}
 
-	// Parse the sls error from body.
+	// Parse the log error from body.
 	if resp.StatusCode != http.StatusOK {
 		err := &Error{}
 		err.HTTPCode = (int32)(resp.StatusCode)

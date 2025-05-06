@@ -27,7 +27,7 @@ func (e Error) String() string {
 }
 
 type Client struct {
-	Endpoint        string // IP or hostname of SLS endpoint
+	Endpoint        string // IP or hostname of endpoint
 	AccessKeyID     string
 	AccessKeySecret string
 	RequestTimeOut  time.Duration
@@ -51,7 +51,7 @@ type LogProject struct {
 }
 
 type ClientInterface interface {
-	PutLogs(project, logStore string, lg *LogGroup) (err error)
+	PutLogs(groupId, streamId string, lg interface{}, logType int) (err error)
 }
 
 func CreateNormalInterface(config *Config) ClientInterface {
@@ -64,12 +64,12 @@ func CreateNormalInterface(config *Config) ClientInterface {
 	}
 }
 
-func (c *Client) PutLogs(groupId, streamId string, lg *LogGroup) (err error) {
-	ls := convertLogstore(c, groupId, streamId)
+func (c *Client) PutLogs(groupId, streamId string, lg interface{}, logType int) (err error) {
+	ls := convertLogstore(c, groupId, streamId, logType)
 	return ls.PutLogs(lg)
 }
 
-func convertLogstore(c *Client, groupId, streamId string) *LogStore {
+func convertLogstore(c *Client, groupId, streamId string, logType int) *LogStore {
 	c.accessKeyLock.RLock()
 	proj := convertLocked(c)
 	c.accessKeyLock.RUnlock()
@@ -78,6 +78,7 @@ func convertLogstore(c *Client, groupId, streamId string) *LogStore {
 		putLogCompressType: CompressNone,
 		GroupId:            groupId,
 		StreamId:           streamId,
+		LogType:            logType,
 	}
 }
 

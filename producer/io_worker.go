@@ -49,7 +49,12 @@ func (ioWorker *IoWorker) closeSendTask(ioWorkerWaitGroup *sync.WaitGroup) {
 
 func (ioWorker *IoWorker) sendToServer(producerBatch *Batch) {
 	beginMs := GetTimeMs(time.Now().UnixNano())
-	err := ioWorker.client.PutLogs(producerBatch.getGroupId(), producerBatch.getStreamId(), producerBatch.logGroup)
+	var err error
+	if LogTypeNormal == producerBatch.logType {
+		err = ioWorker.client.PutLogs(producerBatch.getGroupId(), producerBatch.getStreamId(), producerBatch.logGroup, producerBatch.logType)
+	} else {
+		err = ioWorker.client.PutLogs(producerBatch.getGroupId(), producerBatch.getStreamId(), producerBatch.structLogs, producerBatch.logType)
+	}
 	if err == nil {
 		if producerBatch.attemptCount < producerBatch.maxReservedAttempts {
 			nowMs := GetTimeMs(time.Now().UnixNano())
@@ -74,8 +79,8 @@ func (ioWorker *IoWorker) sendToServer(producerBatch *Batch) {
 			}
 			return
 		}
-		if slsError, ok := err.(*Error); ok {
-			if _, ok := ioWorker.noRetryStatusCodeMap[int(slsError.HTTPCode)]; ok {
+		if logError, ok := err.(*Error); ok {
+			if _, ok := ioWorker.noRetryStatusCodeMap[int(logError.HTTPCode)]; ok {
 				ioWorker.addErrorMessageToBatchAttempt(producerBatch, err, false, beginMs)
 				ioWorker.excuteFailedCallback(producerBatch)
 				return
@@ -98,13 +103,13 @@ func (ioWorker *IoWorker) sendToServer(producerBatch *Batch) {
 
 func (ioWorker *IoWorker) addErrorMessageToBatchAttempt(producerBatch *Batch, err error, retryInfo bool, beginMs int64) {
 	if producerBatch.attemptCount < producerBatch.maxReservedAttempts {
-		slsError, ok := err.(*Error)
+		logError, ok := err.(*Error)
 		if !ok {
 		}
 		if retryInfo {
 		}
 		nowMs := GetTimeMs(time.Now().UnixNano())
-		attempt := createAttempt(false, slsError.RequestID, slsError.Code, slsError.Message, nowMs, nowMs-beginMs, slsError.HTTPCode)
+		attempt := createAttempt(false, logError.RequestID, logError.Code, logError.Message, nowMs, nowMs-beginMs, logError.HTTPCode)
 		producerBatch.result.attemptList = append(producerBatch.result.attemptList, attempt)
 	}
 	producerBatch.result.successful = false
