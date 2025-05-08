@@ -14,6 +14,9 @@ const (
 	CompressLz4  = iota // 0
 	CompressNone        // 1
 	CompressGzip
+
+	LogTypeNormal = 0
+	LogTypeStruct = 1
 )
 
 type LogStore struct {
@@ -21,12 +24,23 @@ type LogStore struct {
 	putLogCompressType int
 	GroupId            string
 	StreamId           string
+	LogType            int
 }
 
-func (s *LogStore) PutLogs(lg *LogGroup) (err error) {
-	if len(lg.Logs) == 0 {
-		// empty log group
-		return nil
+func (s *LogStore) PutLogs(lg interface{}) (err error) {
+	if LogTypeNormal == s.LogType {
+		if logG, ok := lg.(*LogGroup); ok {
+			if len(logG.Logs) == 0 {
+				// empty log group
+				return nil
+			}
+		}
+	} else {
+		if logS, ok := lg.(*StructLogs); ok {
+			if len(logS.Logs) == 0 {
+				return nil
+			}
+		}
 	}
 
 	body, err := json.Marshal(lg)
@@ -59,7 +73,12 @@ func (s *LogStore) PutLogs(lg *LogGroup) (err error) {
 		}
 	}
 
-	uri := fmt.Sprintf("/v2/internal/%s/lts/groups/%s/streams/%s/tenant/batch-contents", s.project.ProjectId, s.GroupId, s.StreamId)
+	var uri string
+	if LogTypeNormal == s.LogType {
+		uri = fmt.Sprintf("/v2/internal/%s/lts/groups/%s/streams/%s/tenant/batch-contents", s.project.ProjectId, s.GroupId, s.StreamId)
+	} else {
+		uri = fmt.Sprintf("/v3/%s/lts/groups/%s/streams/%s/logs", s.project.ProjectId, s.GroupId, s.StreamId)
+	}
 	r, err := request(s.project, "POST", uri, h, out[:outLen])
 	if err != nil {
 		return NewClientError(err)

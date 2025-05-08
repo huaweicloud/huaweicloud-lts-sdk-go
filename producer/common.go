@@ -23,3 +23,20 @@ func GetLogListSize(logList []*Log) int {
 	}
 	return sizeInBytes
 }
+
+func GetStructLogSizeCalculate(log *StructLog) int {
+	sizeInBytes := 0
+	for _, log := range log.Contents {
+		for k, v := range log {
+			sizeInBytes += len(k)
+			sizeInBytes += len(v)
+		}
+	}
+	return sizeInBytes
+}
+
+func GetStructLogListSize(structLogList *StructLog) int {
+	sizeInBytes := GetStructLogSizeCalculate(structLogList)
+
+	return sizeInBytes
+}
