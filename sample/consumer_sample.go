@@ -79,6 +79,7 @@ func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumer
 	slog.Info("sk is: ", "sk", sk)
 	slog.Info("consumerGroupName is: ", "consumerGroupName", consumerGroupName)
 	slog.Info("consumerCount is: ", "consumerCount", consumeCount)
+	slog.Info("batchSize is: ", "batchSize", batchSize)
 	slog.Info("start time is:", "startTime", StartTime)
 	slog.Info("end time:", "endTime", EndTime, "endTime is Zero", EndTime.IsZero())
 
