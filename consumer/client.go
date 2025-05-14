@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log/slog"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -34,6 +33,7 @@ type Client struct {
 	HTTPClient      *http.Client
 	RegionName      string
 	ProjectId       string
+	Endpoint        string
 
 	accessKeyLock sync.RWMutex
 }
@@ -78,6 +78,7 @@ func GetLogConsumerClientAdapter(config *LogConsumerConfig) *LogConsumerClientAd
 						AccessKeySecret: stsTokenConfig.AccessKeySecret,
 						SecurityToken:   stsTokenConfig.SecurityToken,
 						HTTPClient:      defaultHttpClient,
+						Endpoint:        config.EndPoint,
 					}
 					client.stsTokenClientCache.Store(stsTokenConfig, newClient)
 					client.client = newClient
@@ -96,6 +97,7 @@ func GetLogConsumerClientAdapter(config *LogConsumerConfig) *LogConsumerClientAd
 			AccessKeySecret: config.AccessKeySecret,
 			SecurityToken:   config.SecurityToken,
 			HTTPClient:      defaultHttpClient,
+			Endpoint:        config.EndPoint,
 		}
 	}
 	return client
@@ -136,7 +138,7 @@ func (c *Client) heartBeat(projectId string, logGroupId string, logStreamId stri
 		projectId, logGroupId, logStreamId, consumerGroupName)
 	queryMap := make(map[string]string)
 	queryMap["consumer_name"] = consumer
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 	body, _ := json.Marshal(allShards)
 	body, err := c.httpSend("POST", url, body, queryMap)
@@ -158,7 +160,7 @@ func (c *Client) fetchConsumerGroup(projectId string, logGroupId string, logStre
 		projectId, logGroupId, logStreamId, consumerGroupName)
 	queryMap := make(map[string]string)
 	queryMap["shard_id"] = shardId
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 	body, err := c.httpSend("GET", url, *new([]byte), queryMap)
 	if err != nil {
@@ -178,7 +180,7 @@ func (c *Client) getCursorByTime(projectId string, logGroupId string, logStreamI
 		projectId, logGroupId, logStreamId, shardId)
 	queryMap := make(map[string]string)
 	queryMap["from"] = time
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 	body, err := c.httpSend("GET", url, *new([]byte), queryMap)
 	if err != nil {
@@ -199,7 +201,7 @@ func (c *Client) updateCheckPoint(projectId string, logGroupId string, logStream
 		projectId, logGroupId, logStreamId, consumerGroupName)
 	queryMap := make(map[string]string)
 	queryMap["consumer_name"] = consumer
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 	requestBody := make([]map[string]string, 0)
 	dict := make(map[string]string)
@@ -221,7 +223,7 @@ func (c *Client) batchGetLog(projectId string, logGroupId string, logStreamId st
 	if endTime != "" {
 		queryMap["end"] = endTime
 	}
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 
 	responseBody, err := c.httpSend("GET", url, *new([]byte), queryMap)
@@ -282,16 +284,4 @@ func connectQueryString(queryMap map[string]string, url string) string {
 		}
 	}
 	return url
-}
-
-func buildLogPushEndPoint(region string, enableLocalTest bool) string {
-	if region == "eu-west-0" {
-		return "lts-lb.eu-west-0.prod-ocb.honey:8102"
-	} else if region == "cn-north-7" {
-		return "100.79.29.110:8102"
-	} else if enableLocalTest {
-		return fmt.Sprintf("lts-access.%s.myhuaweicloud.com", strings.ToLower(region))
-	} else {
-		return fmt.Sprintf("lts-access.%s.myhuaweicloud.com:8102", strings.ToLower(region))
-	}
 }

@@ -41,7 +41,7 @@ const (
 	CONSUMER_COUNT = 1
 )
 
-func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, logLevel, logDest string, consumeCount, batchSize int, startTime, endTime int64) {
+func ConsumeLog(endpoint, regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, logLevel, logDest string, consumeCount, batchSize int, startTime, endTime int64) {
 	// 消费开始时间 括号中填毫秒值
 	var StartTime time.Time
 	if startTime != 0 {
@@ -72,6 +72,7 @@ func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumer
 		}
 		producer.InitLoggerStd(logConfig)
 	}
+	slog.Info("endpoint is: ", "endpoint", endpoint)
 	slog.Info("region is: ", "region", regionName)
 	slog.Info("projectId is: ", "region", projectId)
 	slog.Info("logGroupId is: ", "logGroupId", logGroupId)
@@ -97,6 +98,7 @@ func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumer
 		config.EndTimeNs = EndTime
 		config.ConsumerGroupName = consumerGroupName
 		config.RegionName = regionName
+		config.EndPoint = endpoint
 
 		// 构建消费者的工作者
 		worker := consumer.GetClientConsumerWorker(new(DemoLogConsumerProcessorFactory), config)

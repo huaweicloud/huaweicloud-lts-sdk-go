@@ -26,7 +26,7 @@ var (
 func main() {
 	flag.Parse()
 	if *function == "consumer" {
-		sample.ConsumeLog(*regionName, *projectId, *logGroupId, *logStreamId, *ak, *sk, *consumerGroupName, *logLevel, *logDest, *consumerCount, *batchSize, *startTime, *endTime)
+		sample.ConsumeLog(*endPoint, *regionName, *projectId, *logGroupId, *logStreamId, *ak, *sk, *consumerGroupName, *logLevel, *logDest, *consumerCount, *batchSize, *startTime, *endTime)
 	} else if *function == "producer" {
 		sample.ProduceLog(*endPoint, *ak, *sk, *regionName, *projectId, *logGroupId, *logStreamId)
 	}

@@ -34,6 +34,7 @@ type LogConsumerConfig struct {
 	timeOutSeconds           int32
 	autoCommitEnabled        bool
 	unloadAfterCommitEnabled bool
+	EndPoint                 string
 }
 
 type STSTokenConfig struct {
