@@ -288,7 +288,7 @@ func buildLogPushEndPoint(region string, enableLocalTest bool) string {
 	if region == "eu-west-0" {
 		return "lts-lb.eu-west-0.prod-ocb.honey:8102"
 	} else if region == "cn-north-7" {
-		return "100.79.29.98:8102"
+		return "100.79.29.110:8102"
 	} else if enableLocalTest {
 		return fmt.Sprintf("lts-access.%s.myhuaweicloud.com", strings.ToLower(region))
 	} else {

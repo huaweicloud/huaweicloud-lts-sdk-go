@@ -1,6 +1,9 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"github.com/huaweicloud/huaweicloud-lts-sdk-go/sample"
+)
 
 var (
 	function          = flag.String("function", "consumer", "sdk功能开关")
@@ -11,14 +14,20 @@ var (
 	ak                = flag.String("ak", "", "华为云帐号的AK")
 	sk                = flag.String("sk", "", "华为云帐号的SK")
 	consumerGroupName = flag.String("consumerName", "", "LTS日志流对应的消费组名称")
-	consumerCount     = flag.Int("consumerCount", 1, "启动消费者数量")
 	startTime         = flag.Int64("startTime", 0, "消费开始时间")
 	endTime           = flag.Int64("endTime", 0, "消费开始时间")
 	logLevel          = flag.String("logLevel", "debug", "打印日志的级别")
 	logDest           = flag.String("logDest", "file", "sdk日志输出")
+	endPoint          = flag.String("endPoint", "endPoint", "云服务地址")
+	//consumerCount     = flag.Int("consumerCount", 1, "启动消费者数量")
+
 )
 
 func main() {
 	flag.Parse()
-
+	if *function == "consumer" {
+		sample.ConsumeLog(*regionName, *projectId, *logGroupId, *logStreamId, *ak, *sk, *consumerGroupName, *logLevel, *logDest, *startTime, *endTime)
+	} else if *function == "producer" {
+		sample.ProduceLog(*endPoint, *ak, *sk, *regionName, *projectId, *logGroupId, *logStreamId)
+	}
 }

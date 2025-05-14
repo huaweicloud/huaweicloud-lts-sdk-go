@@ -1,7 +1,6 @@
-package main
+package sample
 
 import (
-	"flag"
 	"github.com/huaweicloud/huaweicloud-lts-sdk-go/consumer"
 	"github.com/huaweicloud/huaweicloud-lts-sdk-go/producer"
 	"github.com/sirupsen/logrus"
@@ -35,38 +34,25 @@ const (
 	CONSUMER_COUNT = 1
 )
 
-var (
-	regionName        = flag.String("region", "", "云日志服务的区域")
-	projectId         = flag.String("projectId", "", "华为云帐号的项目ID")
-	logGroupId        = flag.String("groupId", "", "LTS的日志组ID")
-	logStreamId       = flag.String("streamId", "", "LTS的日志流ID")
-	ak                = flag.String("ak", "", "华为云帐号的AK")
-	sk                = flag.String("sk", "", "华为云帐号的SK")
-	consumerGroupName = flag.String("consumerName", "", "LTS日志流对应的消费组名称")
-	consumerCount     = flag.Int("consumerCount", 1, "启动消费者数量")
-	startTime         = flag.Int64("startTime", 0, "消费开始时间")
-	endTime           = flag.Int64("endTime", 0, "消费开始时间")
-	logLevel          = flag.String("logLevel", "debug", "打印日志的级别")
-	logDest           = flag.String("logDest", "file", "sdk日志输出")
-)
-
-func main() {
-	flag.Parse()
+func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, logLevel, logDest string, startTime, endTime int64) {
 	// 消费开始时间 括号中填毫秒值
-	StartTime := time.UnixMilli(*startTime)
+	var StartTime time.Time
+	if startTime != 0 {
+		StartTime = time.UnixMilli(startTime)
+	}
 
 	// 消费结束时间
 	var EndTime time.Time
-	if *endTime != 0 {
-		EndTime = time.UnixMilli(*endTime)
+	if endTime != 0 {
+		EndTime = time.UnixMilli(endTime)
 	}
 
 	var logConfig producer.LogConf
-	if *logDest == "file" {
+	if logDest == "file" {
 		logConfig = producer.LogConf{
 			Dir:     "/opt/clouds",
 			Name:    "lts-go-sdk.log",
-			Level:   *logLevel,
+			Level:   logLevel,
 			MaxSize: 100,
 		}
 		producer.InitLoggerFile(logConfig)
@@ -74,42 +60,36 @@ func main() {
 		logConfig = producer.LogConf{
 			Dir:     "",
 			Name:    "",
-			Level:   *logLevel,
+			Level:   logLevel,
 			MaxSize: 100,
 		}
 		producer.InitLoggerStd(logConfig)
 	}
-
-	slog.Info("region is: ", "region", *regionName)
-	slog.Info("projectId is: ", "region", *projectId)
-	slog.Info("logGroupId is: ", "logGroupId", *logGroupId)
-	slog.Info("ak is: ", "ak", *ak)
-	slog.Info("sk is: ", "sk", *sk)
-	slog.Info("consumerGroupName is: ", "consumerGroupName", *consumerGroupName)
-	slog.Info("consumerCount is: ", "consumerCount", *consumerCount)
+	slog.Info("region is: ", "region", regionName)
+	slog.Info("projectId is: ", "region", projectId)
+	slog.Info("logGroupId is: ", "logGroupId", logGroupId)
+	slog.Info("ak is: ", "ak", ak)
+	slog.Info("sk is: ", "sk", sk)
+	slog.Info("consumerGroupName is: ", "consumerGroupName", consumerGroupName)
+	//slog.Info("consumerCount is: ", "consumerCount", consumerCount)
 	slog.Info("start time is:", "startTime", StartTime)
 	slog.Info("end time:", "endTime", EndTime, "endTime is Zero", EndTime.IsZero())
 
 	workers := make([]*consumer.ClientConsumerWorker, 0)
-	for i := 0; i < *consumerCount; i++ {
+	for i := 0; i < 1; i++ {
 		config := consumer.GetConsumerConfig()
 		// 构建消费者配置, 参数有必填的：regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, startTime
-		config.ProjectId = *projectId
-		config.LogGroupId = *logGroupId
-		config.LogStreamId = *logStreamId
-		config.AccessKeyId = *ak
-		config.AccessKeySecret = *sk
+		config.ProjectId = projectId
+		config.LogGroupId = logGroupId
+		config.LogStreamId = logStreamId
+		config.AccessKeyId = ak
+		config.AccessKeySecret = sk
 		config.BatchSize = 500 //BatchSize默认值1000
 		config.StartTimeNs = StartTime
 		config.EndTimeNs = EndTime
-		config.ConsumerGroupName = *consumerGroupName
-		config.RegionName = *regionName
-		/**
-		如果想使用临时AK,临时SK,临时securityToken,设置ILogConsumerSTSToken即可,ILogConsumerSTSToken会定期调用GetSTSTokenConfig
-		方法更新认证信息,方法由用户自己实现ILogConsumerSTSToken接口;如果使用永久AKSK则不用设置ILogConsumerSTSToken
-		*/
-		//logConsumerSTSToken := new(DemoLogConsumerSTSToken)
-		//config.ILogConsumerSTSToken = logConsumerSTSToken
+		config.ConsumerGroupName = consumerGroupName
+		config.RegionName = regionName
+
 		// 构建消费者的工作者
 		worker := consumer.GetClientConsumerWorker(new(DemoLogConsumerProcessorFactory), config)
 		workers = append(workers, worker)

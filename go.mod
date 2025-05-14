@@ -1,6 +1,6 @@
 module github.com/huaweicloud/huaweicloud-lts-sdk-go
 
-go 1.19
+go 1.22
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
