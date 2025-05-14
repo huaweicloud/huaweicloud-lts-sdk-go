@@ -19,14 +19,14 @@ var (
 	logLevel          = flag.String("logLevel", "debug", "打印日志的级别")
 	logDest           = flag.String("logDest", "file", "sdk日志输出")
 	endPoint          = flag.String("endPoint", "endPoint", "云服务地址")
-	//consumerCount     = flag.Int("consumerCount", 1, "启动消费者数量")
-
+	consumerCount     = flag.Int("consumerCount", 1, "启动消费者数量")
+	batchSize         = flag.Int("batchSize", 500, "每次拉取时的batch大小")
 )
 
 func main() {
 	flag.Parse()
 	if *function == "consumer" {
-		sample.ConsumeLog(*regionName, *projectId, *logGroupId, *logStreamId, *ak, *sk, *consumerGroupName, *logLevel, *logDest, *startTime, *endTime)
+		sample.ConsumeLog(*regionName, *projectId, *logGroupId, *logStreamId, *ak, *sk, *consumerGroupName, *logLevel, *logDest, *consumerCount, *batchSize, *startTime, *endTime)
 	} else if *function == "producer" {
 		sample.ProduceLog(*endPoint, *ak, *sk, *regionName, *projectId, *logGroupId, *logStreamId)
 	}

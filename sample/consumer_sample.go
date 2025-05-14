@@ -34,7 +34,7 @@ const (
 	CONSUMER_COUNT = 1
 )
 
-func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, logLevel, logDest string, startTime, endTime int64) {
+func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, logLevel, logDest string, consumeCount, batchSize int, startTime, endTime int64) {
 	// 消费开始时间 括号中填毫秒值
 	var StartTime time.Time
 	if startTime != 0 {
@@ -71,12 +71,12 @@ func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumer
 	slog.Info("ak is: ", "ak", ak)
 	slog.Info("sk is: ", "sk", sk)
 	slog.Info("consumerGroupName is: ", "consumerGroupName", consumerGroupName)
-	//slog.Info("consumerCount is: ", "consumerCount", consumerCount)
+	slog.Info("consumerCount is: ", "consumerCount", consumeCount)
 	slog.Info("start time is:", "startTime", StartTime)
 	slog.Info("end time:", "endTime", EndTime, "endTime is Zero", EndTime.IsZero())
 
 	workers := make([]*consumer.ClientConsumerWorker, 0)
-	for i := 0; i < 1; i++ {
+	for i := 0; i < consumeCount; i++ {
 		config := consumer.GetConsumerConfig()
 		// 构建消费者配置, 参数有必填的：regionName, projectId, logGroupId, logStreamId, ak, sk, consumerGroupName, startTime
 		config.ProjectId = projectId
@@ -84,7 +84,7 @@ func ConsumeLog(regionName, projectId, logGroupId, logStreamId, ak, sk, consumer
 		config.LogStreamId = logStreamId
 		config.AccessKeyId = ak
 		config.AccessKeySecret = sk
-		config.BatchSize = 500 //BatchSize默认值1000
+		config.BatchSize = batchSize //BatchSize默认值1000
 		config.StartTimeNs = StartTime
 		config.EndTimeNs = EndTime
 		config.ConsumerGroupName = consumerGroupName
