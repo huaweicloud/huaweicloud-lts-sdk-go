@@ -5,8 +5,15 @@ import (
 	"github.com/huaweicloud/huaweicloud-lts-sdk-go/producer"
 	"github.com/sirupsen/logrus"
 	"log/slog"
+	"sync/atomic"
 	"time"
 )
+
+var allShardLogCount int64
+
+func init() {
+	allShardLogCount = 0
+}
 
 const (
 	// TEST_REGION_NAME 云日志服务的区域
@@ -123,9 +130,12 @@ func (processor *DemoLogConsumerProcessor) Initialize(shardId string) {
 
 // Process 数据处理方法, logGroups为拉取到的日志
 func (processor *DemoLogConsumerProcessor) Process(logGroups []consumer.LogData, checkPointTracker consumer.ILogConsumerCheckPointTracker) string {
+	atomic.AddInt64(&allShardLogCount, int64(len(logGroups)))
 	processor.LogCount = processor.LogCount + len(logGroups)
 	slog.Info("this time process log", "consume log", len(logGroups), "total log num", processor.LogCount)
+	slog.Info("after this consume", "consume log", len(logGroups), "all shard consume total log num", allShardLogCount)
 	logrus.WithField("consume log", len(logGroups)).WithField("total log num", processor.LogCount).Info("this time process log")
+	logrus.WithField("consume log", len(logGroups)).WithField("all shard consume total log num", allShardLogCount).Info("after this consume")
 	//for _, logData := range logGroups {
 	//	// logData为您的一条日志，日志内容在Labels属性中。
 	//	// Labels为一个JSON，存放您的这个条日志的内容，比如: "log_content": "日志内容"
