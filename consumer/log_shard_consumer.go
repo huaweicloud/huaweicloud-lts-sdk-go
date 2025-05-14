@@ -104,7 +104,7 @@ func (w *LogShardConsumer) generateNextTask() {
 		go w.InitializeTask()
 	case PROCESSING:
 		if w.lastFetchedData != nil {
-			slog.Info("last fetched data is not none")
+			//slog.Info("last fetched data is not none")
 			logrus.Info("last fetched data is not none")
 			w.checkpointTracker.currentCursor = w.lastFetchedData.cursor
 			w.checkpointTracker.nextCursor = w.lastFetchedData.nextCursor
@@ -305,7 +305,9 @@ func (w *LogShardConsumer) LogConsumerFetchTask() {
 			err: err,
 		}
 	} else {
-		slog.Info("batch get logs success", "logSize", len(logs.Logs))
+		if len(logs.Logs) != 0 {
+			slog.Info("batch get logs success", "logSize", len(logs.Logs))
+		}
 		logrus.WithField("logSize", len(logs.Logs)).Info("batch get logs success")
 		fetchedData := logs.Logs
 		nextCursor := logs.Next
