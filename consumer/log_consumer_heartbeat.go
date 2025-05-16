@@ -43,8 +43,8 @@ func (heartbeat *LogConsumerHeartBeat) start() {
 					heartbeat.currentHeldShards = make(map[string]string, 0)
 				}
 			} else {
-				heartbeat.currentHeldShards = make(map[string]string, 0)
 				heartbeat.lock.Lock()
+				heartbeat.currentHeldShards = make(map[string]string, 0)
 				for _, shard := range shards {
 					heartbeat.currentHeldShards[shard] = ""
 					heartbeat.allHeartShards[shard] = ""
