@@ -96,6 +96,8 @@ func (w *ClientConsumerWorker) cleanConsumer(ownedShard map[string]string) {
 		if _, ok := ownedShard[shardId]; ok {
 			continue
 		}
+		slog.With("owned shard", ownedShard).With("shardId", shardId).Info("clean consumer will shutdown")
+		logrus.WithField("owned shard", ownedShard).WithField("shardId", shardId).Info("clean consumer will shutdown")
 		consumer.shutdown()
 		if consumer.currentStatus == SHUTDOWN_COMPLETE {
 			shardToUnload[shardId] = ""
