@@ -1,6 +1,8 @@
 package consumer
 
 import (
+	"github.com/sirupsen/logrus"
+	"log/slog"
 	"time"
 )
 
@@ -81,6 +83,8 @@ func (w *ClientConsumerWorker) getLogShardConsumer(shardId string) *LogShardCons
 		fetchDataTaskIsExist:       false,
 	}
 	w.shardConsumer[shardId] = consumer
+	slog.Info("create a consumer fo shard", "shard", shardId)
+	logrus.WithField("shard", shardId).Info("create a consumer fo shard")
 	go consumer.InitializeTask()
 	consumer.taskIsExist = true
 	return consumer
@@ -92,6 +96,8 @@ func (w *ClientConsumerWorker) cleanConsumer(ownedShard map[string]string) {
 		if _, ok := ownedShard[shardId]; ok {
 			continue
 		}
+		slog.With("owned shard", ownedShard).With("shardId", shardId).Info("clean consumer will shutdown")
+		logrus.WithField("owned shard", ownedShard).WithField("shardId", shardId).Info("clean consumer will shutdown")
 		consumer.shutdown()
 		if consumer.currentStatus == SHUTDOWN_COMPLETE {
 			shardToUnload[shardId] = ""

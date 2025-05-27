@@ -5,9 +5,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"log/slog"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -32,6 +33,7 @@ type Client struct {
 	HTTPClient      *http.Client
 	RegionName      string
 	ProjectId       string
+	Endpoint        string
 
 	accessKeyLock sync.RWMutex
 }
@@ -76,6 +78,7 @@ func GetLogConsumerClientAdapter(config *LogConsumerConfig) *LogConsumerClientAd
 						AccessKeySecret: stsTokenConfig.AccessKeySecret,
 						SecurityToken:   stsTokenConfig.SecurityToken,
 						HTTPClient:      defaultHttpClient,
+						Endpoint:        config.EndPoint,
 					}
 					client.stsTokenClientCache.Store(stsTokenConfig, newClient)
 					client.client = newClient
@@ -94,6 +97,7 @@ func GetLogConsumerClientAdapter(config *LogConsumerConfig) *LogConsumerClientAd
 			AccessKeySecret: config.AccessKeySecret,
 			SecurityToken:   config.SecurityToken,
 			HTTPClient:      defaultHttpClient,
+			Endpoint:        config.EndPoint,
 		}
 	}
 	return client
@@ -134,24 +138,17 @@ func (c *Client) heartBeat(projectId string, logGroupId string, logStreamId stri
 		projectId, logGroupId, logStreamId, consumerGroupName)
 	queryMap := make(map[string]string)
 	queryMap["consumer_name"] = consumer
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 	body, _ := json.Marshal(allShards)
-	reader := bytes.NewReader(body)
-	req, err := http.NewRequest("POST", url, reader)
-	req.Header.Add("content-type", "application/json")
-	SignHeaderBasic(req, c.AccessKeyID, c.AccessKeySecret, "lts", c.RegionName, queryMap)
-	if len(c.SecurityToken) != 0 {
-		req.Header.Add("SecurityToken", c.SecurityToken)
-	}
-	resp, err := c.HTTPClient.Do(req)
+	body, err := c.httpSend("POST", url, body, queryMap)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
 	responseShards := make([]string, 0)
 	if err := json.Unmarshal(body, &responseShards); err != nil {
+		slog.Error("heartBeat unmarshal result error", "response", body, "err", err)
+		logrus.WithError(err).WithField("response", body).Error("heartBeat unmarshal result error")
 		return nil, err
 	}
 	return responseShards, nil
@@ -163,22 +160,16 @@ func (c *Client) fetchConsumerGroup(projectId string, logGroupId string, logStre
 		projectId, logGroupId, logStreamId, consumerGroupName)
 	queryMap := make(map[string]string)
 	queryMap["shard_id"] = shardId
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
-	req, err := http.NewRequest("GET", url, bytes.NewReader(*new([]byte)))
-	req.Header.Add("content-type", "application/json")
-	SignHeaderBasic(req, c.AccessKeyID, c.AccessKeySecret, "lts", c.RegionName, queryMap)
-	if len(c.SecurityToken) != 0 {
-		req.Header.Add("SecurityToken", c.SecurityToken)
-	}
-	resp, err := c.HTTPClient.Do(req)
+	body, err := c.httpSend("GET", url, *new([]byte), queryMap)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
 	shardCheckPoints := make([]ShardCheckPoint, 0)
 	if err := json.Unmarshal(body, &shardCheckPoints); err != nil {
+		slog.Error("fetchConsumerGroup unmarshal result error", "response", body, "err", err)
+		logrus.WithError(err).WithField("response", body).Error("fetchConsumerGroup unmarshal result error")
 		return nil, err
 	}
 	return shardCheckPoints, nil
@@ -189,22 +180,16 @@ func (c *Client) getCursorByTime(projectId string, logGroupId string, logStreamI
 		projectId, logGroupId, logStreamId, shardId)
 	queryMap := make(map[string]string)
 	queryMap["from"] = time
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
-	req, err := http.NewRequest("GET", url, bytes.NewReader(*new([]byte)))
-	req.Header.Add("content-type", "application/json")
-	SignHeaderBasic(req, c.AccessKeyID, c.AccessKeySecret, "lts", c.RegionName, queryMap)
-	if len(c.SecurityToken) != 0 {
-		req.Header.Add("SecurityToken", c.SecurityToken)
-	}
-	resp, err := c.HTTPClient.Do(req)
+	body, err := c.httpSend("GET", url, *new([]byte), queryMap)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
 	cursor := new(Cursor)
 	if err := json.Unmarshal(body, &cursor); err != nil {
+		slog.Error("getCursorByTime unmarshal result error", "response", body, "err", err)
+		logrus.WithError(err).WithField("response", body).Error("getCursorByTime unmarshal result error")
 		return nil, err
 	}
 	return cursor, nil
@@ -216,7 +201,7 @@ func (c *Client) updateCheckPoint(projectId string, logGroupId string, logStream
 		projectId, logGroupId, logStreamId, consumerGroupName)
 	queryMap := make(map[string]string)
 	queryMap["consumer_name"] = consumer
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
 	requestBody := make([]map[string]string, 0)
 	dict := make(map[string]string)
@@ -224,17 +209,7 @@ func (c *Client) updateCheckPoint(projectId string, logGroupId string, logStream
 	dict["checkpoint"] = checkPoint
 	requestBody = append(requestBody, dict)
 	body, _ := json.Marshal(requestBody)
-	reader := bytes.NewReader(body)
-	req, err := http.NewRequest("POST", url, reader)
-	if err != nil {
-		return err
-	}
-	req.Header.Add("content-type", "application/json")
-	SignHeaderBasic(req, c.AccessKeyID, c.AccessKeySecret, "lts", c.RegionName, queryMap)
-	if len(c.SecurityToken) != 0 {
-		req.Header.Add("SecurityToken", c.SecurityToken)
-	}
-	_, err = c.HTTPClient.Do(req)
+	_, err := c.httpSend("POST", url, body, queryMap)
 	return err
 }
 
@@ -248,25 +223,53 @@ func (c *Client) batchGetLog(projectId string, logGroupId string, logStreamId st
 	if endTime != "" {
 		queryMap["end"] = endTime
 	}
-	url := fmt.Sprintf("https://%s%s", buildLogPushEndPoint(c.RegionName, false), uri)
+	url := fmt.Sprintf("https://%s%s", c.Endpoint, uri)
 	url = connectQueryString(queryMap, url)
-	req, err := http.NewRequest("GET", url, bytes.NewReader(*new([]byte)))
+
+	responseBody, err := c.httpSend("GET", url, *new([]byte), queryMap)
+	if err != nil {
+		return nil, err
+	}
+	batchGetLog := new(BatchGetLog)
+	if err := json.Unmarshal(responseBody, &batchGetLog); err != nil {
+		slog.Error("batchGetLog unmarshal result error", "response", responseBody, "err", err)
+		logrus.WithError(err).WithField("response", responseBody).Error("batchGetLog unmarshal result error")
+		return nil, err
+	}
+	return batchGetLog, nil
+}
+
+func (c *Client) httpSend(method, url string, body []byte, queryMap map[string]string) ([]byte, error) {
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	if err != nil {
+		slog.Error("http generate request error", "url", url, "err", err)
+		logrus.WithError(err).WithField("url", url).Error("http generate request error")
+		return nil, err
+	}
 	req.Header.Add("content-type", "application/json")
 	SignHeaderBasic(req, c.AccessKeyID, c.AccessKeySecret, "lts", c.RegionName, queryMap)
 	if len(c.SecurityToken) != 0 {
 		req.Header.Add("SecurityToken", c.SecurityToken)
 	}
+	beginTime := time.Now().UnixMilli()
 	resp, err := c.HTTPClient.Do(req)
+	endTime := time.Now().UnixMilli()
 	if err != nil {
+		slog.Error("http send error", "url", url, "err", err)
+		logrus.WithError(err).WithField("url", url).Error("http send error")
 		return nil, err
 	}
+
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	batchGetLog := new(BatchGetLog)
-	if err := json.Unmarshal(body, &batchGetLog); err != nil {
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		slog.Error("http read response body error", "url", url, "err", err)
+		logrus.WithError(err).WithField("url", url).Error("http read response body error")
 		return nil, err
 	}
-	return batchGetLog, nil
+	slog.Debug("http client end", "url", url, "code", resp.StatusCode, "result", string(responseBody), "cost", endTime-beginTime)
+	logrus.WithField("code", resp.StatusCode).WithField("url", url).WithField("result", string(responseBody)).WithField("cost", endTime-beginTime).Debug("http client end")
+	return responseBody, err
 }
 
 func connectQueryString(queryMap map[string]string, url string) string {
@@ -281,16 +284,4 @@ func connectQueryString(queryMap map[string]string, url string) string {
 		}
 	}
 	return url
-}
-
-func buildLogPushEndPoint(region string, enableLocalTest bool) string {
-	if region == "eu-west-0" {
-		return "lts-lb.eu-west-0.prod-ocb.honey:8102"
-	} else if region == "cn-north-7" {
-		return "100.79.29.98:8102"
-	} else if enableLocalTest {
-		return fmt.Sprintf("lts-access.%s.myhuaweicloud.com", strings.ToLower(region))
-	} else {
-		return fmt.Sprintf("lts-access.%s.myhuaweicloud.com:8102", strings.ToLower(region))
-	}
 }

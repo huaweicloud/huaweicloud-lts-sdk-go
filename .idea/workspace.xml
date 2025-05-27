@@ -4,49 +4,29 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2f290660-3042-4e3d-853a-f577153f7a26" name="Changes" comment="US2024030701232 上报指定时间戳">
-      <change afterPath="$PROJECT_DIR$/.cid/lts-go-sdk.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/client.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/client_consumer_worker.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/config.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/const.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/interfaces.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/log_consumer_heartbeat.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/log_shard_consumer.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/singer.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/consumer/task.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/accumulator.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/batch.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/client.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/common.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/config.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/io_thread_pool.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/io_worker.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/log.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/log_store.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/mover.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/producer.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/request.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/result.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/retry_queue.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/producer/singer.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sample/consumer_sample.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sample/producer_sample.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+    <list default="true" id="2f290660-3042-4e3d-853a-f577153f7a26" name="Changes" comment="US2024030701232 lts-go-sdk">
+      <change afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sample/producer_sample.go" beforeDir="false" afterPath="$PROJECT_DIR$/sample/producer_sample.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../../soft/develop/go" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://$PROJECT_DIR$/../../../../soft/develop/go-1.24.1" />
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="master" />
+        <entry key="$PROJECT_DIR$" value="out.github" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -61,6 +41,10 @@
             <RecentBranchesForRepo>
               <option name="branches">
                 <list>
+                  <RecentBranch>
+                    <option name="branchName" value="out.github_fanxin" />
+                    <option name="lastUsedInstant" value="1743381900" />
+                  </RecentBranch>
                   <RecentBranch>
                     <option name="branchName" value="out.github" />
                     <option name="lastUsedInstant" value="1736237193" />
@@ -99,6 +83,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
@@ -106,15 +91,24 @@
     &quot;RunOnceActivity.go.modules.automatic.dependencies.download&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;out.github&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;out.github__fanxin&quot;,
     &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/code/icagent/SDK/lts-go-sdk&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/code/kube-prometheus-stack/cie-pkg&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;go.vgo&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;go.sdk&quot;
   }
 }</component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Go Remote.Unnamed">
+    <configuration name="go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample (1)" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="lts-go-sdk" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/sample/consumer_sample.go" />
+      <method v="2" />
+    </configuration>
     <configuration name="go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="lts-go-sdk" />
       <working_directory value="$PROJECT_DIR$" />
@@ -124,8 +118,29 @@
       <filePath value="$PROJECT_DIR$/sample/producer_sample.go" />
       <method v="2" />
     </configuration>
+    <configuration name="go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="lts-go-sdk" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="-region cn-north-7 -projectId a0a12b069ab4491185d7cf26c3e86ada -groupId 0e9e9d92-e6ad-4fa6-83be-cd4e8f73ec00 -streamId c345b95a-61fc-4d3c-8268-89f452de0283 -ak 5D6QCT4BQVMUGRMX0SMG -sk vipo717lfklsIBSfpH6BJyp8cIpNRKmfJjZJ9oWs -consumerName fanxin-lord -consumerCount 1 -startTime 1743382800000 -endTime 1743433200000" />
+      <kind value="PACKAGE" />
+      <package value="github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/sample/consumer_sample.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unnamed" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" nameIsGenerated="true" host="100.93.5.100">
+      <option name="disconnectOption" value="LEAVE" />
+      <disconnect value="LEAVE" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample (1)" />
+      <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
+      <item itemvalue="Go Remote.Unnamed" />
+    </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
         <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
         <item itemvalue="Go Build.go build github.com/huaweicloud/huaweicloud-lts-sdk-go/sample" />
       </list>
@@ -155,19 +170,7 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="FILTERS">
-                <map>
-                  <entry key="branch">
-                    <value>
-                      <list>
-                        <option value="out.github" />
-                      </list>
-                    </value>
-                  </entry>
-                </map>
-              </option>
-            </State>
+            <State />
           </value>
         </entry>
       </map>
@@ -175,7 +178,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="US2024030701232 上报指定时间戳" />
-    <option name="LAST_COMMIT_MESSAGE" value="US2024030701232 上报指定时间戳" />
+    <MESSAGE value="US2024030701232 lts-go-sdk" />
+    <option name="LAST_COMMIT_MESSAGE" value="US2024030701232 lts-go-sdk" />
   </component>
   <component name="VgoProject">
     <environment>
@@ -195,6 +199,21 @@
           <url>file://$PROJECT_DIR$/producer/request.go</url>
           <line>194</line>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/consumer/log_shard_consumer.go</url>
+          <line>301</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/consumer/log_shard_consumer.go</url>
+          <line>307</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/consumer/client.go</url>
+          <line>217</line>
+          <option name="timeStamp" value="12" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

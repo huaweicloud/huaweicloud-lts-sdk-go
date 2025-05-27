@@ -1,6 +1,8 @@
 package consumer
 
 import (
+	"github.com/sirupsen/logrus"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -41,14 +43,16 @@ func (heartbeat *LogConsumerHeartBeat) start() {
 					heartbeat.currentHeldShards = make(map[string]string, 0)
 				}
 			} else {
-				heartbeat.currentHeldShards = make(map[string]string, 0)
 				heartbeat.lock.Lock()
+				heartbeat.currentHeldShards = make(map[string]string, 0)
 				for _, shard := range shards {
 					heartbeat.currentHeldShards[shard] = ""
 					heartbeat.allHeartShards[shard] = ""
 				}
 				heartbeat.lock.Unlock()
 				heartbeat.lastSuccessTime = time.Now()
+				slog.Debug("after heart beat", "currentHeldShards", heartbeat.currentHeldShards, "allHeartShards", heartbeat.allHeartShards, "lastSuccessTime", heartbeat.lastSuccessTime)
+				logrus.WithField("currentHeldShards", heartbeat.currentHeldShards).WithField("allHeartShards", heartbeat.allHeartShards).WithField("lastSuccessTime", heartbeat.lastSuccessTime).Debug("after heart beat")
 			}
 		}
 	}()

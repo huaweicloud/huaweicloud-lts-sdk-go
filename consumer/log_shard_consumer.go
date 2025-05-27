@@ -1,6 +1,8 @@
 package consumer
 
 import (
+	"github.com/sirupsen/logrus"
+	"log/slog"
 	"strconv"
 	"time"
 )
@@ -46,7 +48,7 @@ type ShardCheckPoint struct {
 }
 
 type LogData struct {
-	Labels map[string]string `json:"labels"`
+	Labels map[string]interface{} `json:"labels"`
 }
 
 type Cursor struct {
@@ -55,7 +57,7 @@ type Cursor struct {
 
 type BatchGetLog struct {
 	Count int64     `json:"count"`
-	Next  string    `json:"next"`
+	Next  int64     `json:"next"`
 	Logs  []LogData `json:"logs"`
 }
 
@@ -71,6 +73,8 @@ func (w *LogShardConsumer) checkAndGenerateNextTask() {
 		taskSuccess := false
 		if len(w.taskResultChannel) != 0 {
 			result, ok := <-w.taskResultChannel
+			slog.Debug("after get task result", "result", result)
+			logrus.WithField("result", result).Debug("after get task result")
 			if !ok {
 				return
 			}
@@ -93,16 +97,23 @@ func (w *LogShardConsumer) checkAndGenerateNextTask() {
 }
 
 func (w *LogShardConsumer) generateNextTask() {
+	slog.Debug("when generate next task", "status", w.currentStatus)
+	logrus.WithField("status", w.currentStatus).Debug("when generate next task")
 	switch w.currentStatus {
 	case INITIALIZING:
 		go w.InitializeTask()
 	case PROCESSING:
 		if w.lastFetchedData != nil {
+			//slog.Info("last fetched data is not none")
+			logrus.Info("last fetched data is not none")
 			w.checkpointTracker.currentCursor = w.lastFetchedData.cursor
 			w.checkpointTracker.nextCursor = w.lastFetchedData.nextCursor
 			go w.ProcessTask(w.lastFetchedData.fetchedData)
 			w.taskIsExist = true
 			w.lastFetchedData = nil
+		} else {
+			slog.Debug("last fetched data is none")
+			logrus.Debug("last fetched data is none")
 		}
 	case SHUTTING_DOWN:
 		w.cancelCurrentFetch()
@@ -131,6 +142,8 @@ func (w *LogShardConsumer) cancelCurrentFetch() {
 	if !w.fetchDataTaskIsExist {
 		w.fetchDataTaskIsCancelled = true
 		w.fetchDataTaskIsExist = false
+		slog.Info("cancel a fetch task", "shardId", w.shardId)
+		logrus.WithField("shardId", w.shardId).Info("cancel a fetch task")
 	}
 	w.lastFetchedData = nil
 }
@@ -173,6 +186,8 @@ func (w *LogShardConsumer) sampleLogError(result *TaskResult) {
 	if result != nil && result.err != nil {
 		now := time.Now()
 		if now.Sub(w.lastLogErrorTime) > 5*time.Second {
+			slog.Warn("error", "err", result.err)
+			logrus.WithError(result.err).Error("sampleLogError error")
 			w.lastLogErrorTime = now
 		}
 	}
@@ -200,6 +215,8 @@ func (w *LogShardConsumer) InitializeTask() {
 	isCursorPersistent := false
 	shardCheckPointList, err := client.fetchConsumerGroup(w.shardId)
 	if err != nil {
+		slog.Error("error fetching initial position", "err", err)
+		logrus.WithError(err).Error("error fetching initial position")
 		w.taskResultChannel <- &TaskResult{
 			err: err,
 		}
@@ -209,15 +226,21 @@ func (w *LogShardConsumer) InitializeTask() {
 		cursor, err1 := client.client.getCursorByTime(client.projectId, client.logGroupId, client.logStreamId,
 			w.shardId, strconv.FormatInt(w.endTime.UnixNano(), 10))
 		if err1 != nil {
+			slog.Error("error fetching initial position, get cursor by time error", "err", err)
+			logrus.WithError(err).Error("error fetching initial position, get cursor by time error")
 			w.taskResultChannel <- &TaskResult{
 				err: err1,
 			}
 			return
 		}
 		endTimeByCursor = cursor.Cursor
+		slog.Debug("initialize task", "shardId", w.shardId, "endTime", w.endTime, "endTimeByCursor", endTimeByCursor)
+		logrus.WithField("shardId", w.shardId).WithField("endTime", w.endTime).WithField("endTimeByCursor", endTimeByCursor).Debug("initialize task")
 	}
 	if shardCheckPointList != nil && len(shardCheckPointList) > 0 {
 		shardCheckPoint := shardCheckPointList[0]
+		slog.Debug("shard checkpoint", "shard checkpoint", shardCheckPoint)
+		logrus.WithField("shard checkpoint", shardCheckPoint).Debug("shard checkpoint")
 		isCursorPersistent = true
 		startTimeByCursor = strconv.FormatInt(shardCheckPoint.Checkpoint, 10)
 	} else {
@@ -225,14 +248,21 @@ func (w *LogShardConsumer) InitializeTask() {
 			cursor, err2 := client.client.getCursorByTime(client.projectId, client.logGroupId, client.logStreamId,
 				w.shardId, strconv.FormatInt(w.startTime.UnixNano(), 10))
 			if err2 != nil {
+				slog.Error("error fetching initial position, get cursor by time error", "err", err)
+				logrus.WithError(err).Error("error fetching initial position, get cursor by time error")
 				w.taskResultChannel <- &TaskResult{
 					err: err2,
 				}
 				return
 			}
 			startTimeByCursor = cursor.Cursor
+			slog.Debug("initialize task", "shardId", w.shardId, "endTime", w.endTime, "startTimeByCursor", startTimeByCursor)
+			logrus.WithField("shardId", w.shardId).WithField("endTime", w.endTime).WithField("startTimeByCursor", startTimeByCursor).Debug("initialize task")
 		}
 	}
+
+	slog.Debug("initialize task", "shardId", w.shardId, "startTimeByCursor", startTimeByCursor, "endTimeByCursor", endTimeByCursor, "isCursorPersistent", isCursorPersistent)
+	logrus.WithField("shardId", w.shardId).WithField("startTimeByCursor", startTimeByCursor).WithField("endTimeByCursor", endTimeByCursor).WithField(endTimeByCursor, "isCursorPersistent").Debug("initialize task")
 	w.taskResultChannel <- &TaskResult{
 		startTime:        startTimeByCursor,
 		endTime:          endTimeByCursor,
@@ -269,20 +299,29 @@ func (w *LogShardConsumer) ShutDownTask() {
 func (w *LogShardConsumer) LogConsumerFetchTask() {
 	logs, err := w.logConsumerClient.batchGetLogs(w.shardId, strconv.Itoa(w.config.BatchSize), w.nextFetchCursor, w.finalFetchCursor)
 	if err != nil {
+		slog.Error("batch get logs error", "err", err)
+		logrus.WithError(err).Error("batch get logs error")
 		w.fetchDataTaskResultChannel <- &TaskResult{
 			err: err,
 		}
 	} else {
+		if len(logs.Logs) != 0 {
+			slog.Info("batch get logs success", "logSize", len(logs.Logs))
+		}
+		logrus.WithField("logSize", len(logs.Logs)).Info("batch get logs success")
 		fetchedData := logs.Logs
 		nextCursor := logs.Next
-		if nextCursor == "" {
-			nextCursor = w.nextFetchCursor
+		nextCursorStr := strconv.FormatInt(nextCursor, 10)
+		if nextCursor == 0 {
+			nextCursorStr = w.nextFetchCursor
 		}
 		w.fetchDataTaskResultChannel <- &TaskResult{
 			cursor:     w.nextFetchCursor,
-			nextCursor: nextCursor,
+			nextCursor: nextCursorStr,
 			fetchData:  fetchedData,
 		}
+		slog.Debug("batch get logs send to channel success")
+		logrus.Debug("batch get logs send to channel success")
 	}
 }
 

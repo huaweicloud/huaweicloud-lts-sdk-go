@@ -1,4 +1,4 @@
-package main
+package sample
 
 import (
 	"fmt"
@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-func main() {
+func ProduceLog(endpoint, ak, sk, region, projectId, logGroup, logStream string) {
 	producerConfig := producer.GetConfig()
-	producerConfig.Endpoint = "endpoint"
-	producerConfig.AccessKeyID = "ak"
-	producerConfig.AccessKeySecret = "sk"
-	producerConfig.RegionId = "region"
-	producerConfig.ProjectId = "pid"
+	producerConfig.Endpoint = endpoint
+	producerConfig.AccessKeyID = ak
+	producerConfig.AccessKeySecret = sk
+	producerConfig.RegionId = region
+	producerConfig.ProjectId = projectId
 	producerInstance := producer.InitProducer(producerConfig)
 
 	producerInstance.Start()
@@ -33,13 +33,13 @@ func main() {
 				}
 
 				log := producer.GenerateLogWithCustomTime([]producer.CustomLog{customLogs}, labels)
-				err := producerInstance.SendLog("groupId", "streamId1", log)
-				err = producerInstance.SendLog("groupId", "streamId2", log)
+				err := producerInstance.SendLog(logGroup, logStream, log)
+				err = producerInstance.SendLog(logGroup, logStream, log)
 
 				// send log with callback，user can deal error by self
 				handle := ErrorHandle{}
-				err = producerInstance.SendLogWithCallBack("groupId", "streamId1", log, handle)
-				err = producerInstance.SendLogWithCallBack("groupId", "streamId1", log, handle)
+				err = producerInstance.SendLogWithCallBack(logGroup, logStream, log, handle)
+				err = producerInstance.SendLogWithCallBack(logGroup, logStream, log, handle)
 
 				if err != nil {
 					fmt.Println(err)
@@ -53,7 +53,7 @@ func main() {
 				logContent["keyB1"] = "valueB1"
 				sLog.Contents = append(sLog.Contents, logContent1)
 
-				err := producerInstance.SendLogStruct("groupId", "streamId", sLog)
+				err = producerInstance.SendLogStruct(logGroup, logStream, &sLog)
 				if nil != err {
 					continue
 				}
