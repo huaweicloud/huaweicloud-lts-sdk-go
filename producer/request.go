@@ -36,6 +36,7 @@ var (
 			MaxIdleConnsPerHost: 20,
 			IdleConnTimeout:     30 * time.Second,
 			DisableKeepAlives:   false,
+			Proxy:               http.ProxyFromEnvironment,
 		},
 	}
 )
@@ -99,6 +100,9 @@ func (p *LogProject) WithRequestTimeout(timeout time.Duration) *LogProject {
 	if p.httpClient == defaultHttpClient || p.httpClient == nil {
 		p.httpClient = &http.Client{
 			Timeout: timeout,
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+			},
 		}
 	} else {
 		p.httpClient.Timeout = timeout
@@ -127,6 +131,7 @@ func (p *LogProject) parseEndpoint() {
 			p.httpClient = &http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+					Proxy:           http.ProxyFromEnvironment,
 				},
 				Timeout: defaultRequestTimeout,
 			}

@@ -20,6 +20,7 @@ var (
 		Timeout: defaultRequestTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			Proxy:           http.ProxyFromEnvironment,
 		},
 	}
 )
