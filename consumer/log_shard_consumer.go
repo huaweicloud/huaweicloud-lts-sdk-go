@@ -1,10 +1,12 @@
 package consumer
 
 import (
-	"github.com/sirupsen/logrus"
 	"log/slog"
 	"strconv"
+	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type LogShardConsumer struct {
@@ -24,6 +26,9 @@ type LogShardConsumer struct {
 	fetchDataTaskResultChannel chan *TaskResult
 	fetchDataTaskIsExist       bool
 	fetchDataTaskIsCancelled   bool
+
+	shutdownLock        sync.Mutex
+	shutDownTaskStarted bool
 
 	currentStatus     string
 	lastFetchedData   *FetchedLogData
@@ -61,7 +66,29 @@ type BatchGetLog struct {
 	Logs  []LogData `json:"logs"`
 }
 
+func (w *LogShardConsumer) sendTaskResult(result *TaskResult) {
+	select {
+	case w.taskResultChannel <- result:
+	default:
+		// channel 已关闭或已满（shutdown 竞态），丢弃该结果，避免 panic: send on closed channel
+		slog.Debug("task result channel closed or full, drop result", "shardId", w.shardId)
+	}
+}
+
+func (w *LogShardConsumer) sendFetchDataResult(result *TaskResult) {
+	select {
+	case w.fetchDataTaskResultChannel <- result:
+	default:
+		// channel 已关闭或已满（shutdown 竞态），丢弃该结果，避免 panic: send on closed channel
+		slog.Debug("fetch data result channel closed or full, drop result", "shardId", w.shardId)
+	}
+}
+
 func (w *LogShardConsumer) consume() {
+	// 防御性检查：shutdown 后不再发起新任务，避免与 ShutDownTask 并发
+	if w.shutDown {
+		return
+	}
 	w.checkAndGenerateNextTask()
 	if w.currentStatus == PROCESSING && w.lastFetchedData == nil {
 		w.fetchData()
@@ -217,9 +244,9 @@ func (w *LogShardConsumer) InitializeTask() {
 	if err != nil {
 		slog.Error("error fetching initial position", "err", err)
 		logrus.WithError(err).Error("error fetching initial position")
-		w.taskResultChannel <- &TaskResult{
+		w.sendTaskResult(&TaskResult{
 			err: err,
-		}
+		})
 		return
 	}
 	if !w.endTime.IsZero() {
@@ -228,9 +255,9 @@ func (w *LogShardConsumer) InitializeTask() {
 		if err1 != nil {
 			slog.Error("error fetching initial position, get cursor by time error", "err", err)
 			logrus.WithError(err).Error("error fetching initial position, get cursor by time error")
-			w.taskResultChannel <- &TaskResult{
+			w.sendTaskResult(&TaskResult{
 				err: err1,
-			}
+			})
 			return
 		}
 		endTimeByCursor = cursor.Cursor
@@ -250,9 +277,9 @@ func (w *LogShardConsumer) InitializeTask() {
 			if err2 != nil {
 				slog.Error("error fetching initial position, get cursor by time error", "err", err)
 				logrus.WithError(err).Error("error fetching initial position, get cursor by time error")
-				w.taskResultChannel <- &TaskResult{
+				w.sendTaskResult(&TaskResult{
 					err: err2,
-				}
+				})
 				return
 			}
 			startTimeByCursor = cursor.Cursor
@@ -263,37 +290,48 @@ func (w *LogShardConsumer) InitializeTask() {
 
 	slog.Debug("initialize task", "shardId", w.shardId, "startTimeByCursor", startTimeByCursor, "endTimeByCursor", endTimeByCursor, "isCursorPersistent", isCursorPersistent)
 	logrus.WithField("shardId", w.shardId).WithField("startTimeByCursor", startTimeByCursor).WithField("endTimeByCursor", endTimeByCursor).WithField(endTimeByCursor, "isCursorPersistent").Debug("initialize task")
-	w.taskResultChannel <- &TaskResult{
+	w.sendTaskResult(&TaskResult{
 		startTime:        startTimeByCursor,
 		endTime:          endTimeByCursor,
 		cursorPersistent: isCursorPersistent,
-	}
+	})
 }
 
 func (w *LogShardConsumer) ProcessTask(fetchedData []LogData) {
 	w.checkpointTracker.pendingCheckpoint = w.checkpointTracker.nextCursor
 	checkpoint := w.processor.Process(fetchedData, w.checkpointTracker)
 	err := w.checkpointTracker.consumeDataEndFlushCheckPoint()
-	w.taskResultChannel <- &TaskResult{
+	w.sendTaskResult(&TaskResult{
 		err:                err,
 		rollBackCheckPoint: checkpoint,
-	}
+	})
 }
 
 func (w *LogShardConsumer) ShutDownTask() {
+	// 幂等保护：rebalance 期间 cleanConsumer 每 tick 都会对失去的 shard 调 shutdown()
+	// -> SHUTTING_DOWN -> go ShutDownTask()，不拦截会重复执行用户 processor.Shutdown 回调
+	// 并产生无意义 goroutine。
+	w.shutdownLock.Lock()
+	if w.shutDownTaskStarted {
+		w.shutdownLock.Unlock()
+		return
+	}
+	w.shutDownTaskStarted = true
+	w.shutdownLock.Unlock()
+
 	err := w.processor.Shutdown(w.checkpointTracker)
 	if flushErr := w.checkpointTracker.flushCheckpoint(); flushErr != nil {
 		if err == nil {
 			err = flushErr
 		}
 	}
-	w.taskResultChannel <- &TaskResult{
+	w.sendTaskResult(&TaskResult{
 		err: err,
-	}
-	if err == nil {
-		close(w.taskResultChannel)
-		close(w.fetchDataTaskResultChannel)
-	}
+	})
+	// 注意：不再 close 两个 result channel。
+	// 关闭 channel 后，仍在运行的 InitializeTask/ProcessTask/LogConsumerFetchTask
+	// 向已关闭 channel 发送会触发 panic: send on closed channel（线上崩溃根因）。
+	// channel 随 shard consumer 被 cleanConsumer 清理后一起被 GC，无泄漏。
 }
 
 func (w *LogShardConsumer) LogConsumerFetchTask() {
@@ -301,9 +339,9 @@ func (w *LogShardConsumer) LogConsumerFetchTask() {
 	if err != nil {
 		slog.Error("batch get logs error", "err", err)
 		logrus.WithError(err).Error("batch get logs error")
-		w.fetchDataTaskResultChannel <- &TaskResult{
+		w.sendFetchDataResult(&TaskResult{
 			err: err,
-		}
+		})
 	} else {
 		if len(logs.Logs) != 0 {
 			slog.Info("batch get logs success", "logSize", len(logs.Logs))
@@ -315,11 +353,11 @@ func (w *LogShardConsumer) LogConsumerFetchTask() {
 		if nextCursor == 0 {
 			nextCursorStr = w.nextFetchCursor
 		}
-		w.fetchDataTaskResultChannel <- &TaskResult{
+		w.sendFetchDataResult(&TaskResult{
 			cursor:     w.nextFetchCursor,
 			nextCursor: nextCursorStr,
 			fetchData:  fetchedData,
-		}
+		})
 		slog.Debug("batch get logs send to channel success")
 		logrus.Debug("batch get logs send to channel success")
 	}

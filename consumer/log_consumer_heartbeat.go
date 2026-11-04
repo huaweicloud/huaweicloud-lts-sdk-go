@@ -35,12 +35,20 @@ func (heartbeat *LogConsumerHeartBeat) start() {
 			if heartbeat.isStop {
 				return
 			}
-			shards, err := heartbeat.client.heartBeat(convertAllHeartShards(heartbeat.allHeartShards))
+			// 加锁读取 allHeartShards 快照：主循环 cleanConsumer→unsubscribe 会并发写 allHeartShards，
+			// 直接传 map 给 convertAllHeartShards 遍历会触发 "concurrent map iteration and map write" fatal。
+			heartbeat.lock.Lock()
+			shardsForHeartbeat := convertAllHeartShards(heartbeat.allHeartShards)
+			heartbeat.lock.Unlock()
+			shards, err := heartbeat.client.heartBeat(shardsForHeartbeat)
 			if err != nil {
 				now := time.Now()
 				if int64(now.Sub(heartbeat.lastSuccessTime))/1000000 >
 					int64(heartbeat.timeOutSeconds*1000)+heartbeat.heartbeatIntervalMillis {
+					// 加锁：主循环 Run() 会并发读 currentHeldShards，这里清空必须持锁
+					heartbeat.lock.Lock()
 					heartbeat.currentHeldShards = make(map[string]string, 0)
+					heartbeat.lock.Unlock()
 				}
 			} else {
 				heartbeat.lock.Lock()
@@ -49,16 +57,23 @@ func (heartbeat *LogConsumerHeartBeat) start() {
 					heartbeat.currentHeldShards[shard] = ""
 					heartbeat.allHeartShards[shard] = ""
 				}
+				// 在锁内复制快照用于日志，避免日志读取时并发写
+				allShardsSnapshot := copyShardsMap(heartbeat.allHeartShards)
+				heldShardsSnapshot := copyShardsMap(heartbeat.currentHeldShards)
 				heartbeat.lock.Unlock()
 				heartbeat.lastSuccessTime = time.Now()
-				slog.Debug("after heart beat", "currentHeldShards", heartbeat.currentHeldShards, "allHeartShards", heartbeat.allHeartShards, "lastSuccessTime", heartbeat.lastSuccessTime)
-				logrus.WithField("currentHeldShards", heartbeat.currentHeldShards).WithField("allHeartShards", heartbeat.allHeartShards).WithField("lastSuccessTime", heartbeat.lastSuccessTime).Debug("after heart beat")
+				slog.Debug("after heart beat", "currentHeldShards", heldShardsSnapshot, "allHeartShards", allShardsSnapshot, "lastSuccessTime", heartbeat.lastSuccessTime)
+				logrus.WithField("currentHeldShards", heldShardsSnapshot).WithField("allHeartShards", allShardsSnapshot).WithField("lastSuccessTime", heartbeat.lastSuccessTime).Debug("after heart beat")
 			}
 		}
 	}()
 }
 
 func (heartbeat *LogConsumerHeartBeat) unsubscribe(shards map[string]string) {
+	// 加锁：heartbeat goroutine 会并发读 allHeartShards（convertAllHeartShards），
+	// 无锁 delete 会触发 "concurrent map iteration and map write" fatal。
+	heartbeat.lock.Lock()
+	defer heartbeat.lock.Unlock()
 	for shard := range shards {
 		delete(heartbeat.allHeartShards, shard)
 	}
@@ -73,4 +88,13 @@ func convertAllHeartShards(allHeartShards map[string]string) []string {
 		shards = append(shards, key)
 	}
 	return shards
+}
+
+// copyShardsMap 在持锁状态下复制 map 快照，避免锁外读取时被并发写。
+func copyShardsMap(m map[string]string) map[string]string {
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }
