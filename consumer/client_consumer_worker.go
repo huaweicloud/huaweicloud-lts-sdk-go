@@ -58,6 +58,13 @@ func (w *ClientConsumerWorker) Run() {
 
 func (w *ClientConsumerWorker) consumerForShard(shardId string) *LogShardConsumer {
 	if consumer, ok := w.shardConsumer[shardId]; ok {
+		// 已 shutdown 的 consumer 需删除重建，避免消费停滞
+		if consumer.currentStatus == SHUTDOWN_COMPLETE {
+			slog.Info("rebuild shard consumer after shutdown complete", "shardId", shardId)
+			logrus.WithField("shardId", shardId).Info("rebuild shard consumer after shutdown complete")
+			delete(w.shardConsumer, shardId)
+			return w.getLogShardConsumer(shardId)
+		}
 		return consumer
 	}
 	return w.getLogShardConsumer(shardId)

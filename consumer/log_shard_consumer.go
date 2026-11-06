@@ -85,7 +85,6 @@ func (w *LogShardConsumer) sendFetchDataResult(result *TaskResult) {
 }
 
 func (w *LogShardConsumer) consume() {
-	// 防御性检查：shutdown 后不再发起新任务，避免与 ShutDownTask 并发
 	if w.shutDown {
 		return
 	}
@@ -189,15 +188,27 @@ func (w *LogShardConsumer) fetchData() {
 		if !ok {
 			return
 		}
+		// shutdown 后丢弃在途 fetch 结果
+		if w.shutDown {
+			slog.Debug("discard in-flight fetch result after shutdown", "shardId", w.shardId)
+			logrus.WithField("shardId", w.shardId).Debug("discard in-flight fetch result after shutdown")
+			return
+		}
 		if fetchResult.err == nil {
-			w.lastFetchedData = &FetchedLogData{
-				shardId:     w.shardId,
-				fetchedData: fetchResult.fetchData,
-				nextCursor:  fetchResult.nextCursor,
-				cursor:      fetchResult.cursor,
+			// cursor 不变时跳过，避免重复消费
+			if fetchResult.nextCursor == w.nextFetchCursor && len(fetchResult.fetchData) > 0 {
+				slog.Debug("fetch no progress, cursor unchanged, skip to avoid duplicate consume", "shardId", w.shardId)
+				logrus.WithField("shardId", w.shardId).Debug("fetch no progress, cursor unchanged, skip to avoid duplicate consume")
+			} else {
+				w.lastFetchedData = &FetchedLogData{
+					shardId:     w.shardId,
+					fetchedData: fetchResult.fetchData,
+					nextCursor:  fetchResult.nextCursor,
+					cursor:      fetchResult.cursor,
+				}
+				w.nextFetchCursor = fetchResult.nextCursor
+				w.sampleLogError(fetchResult)
 			}
-			w.nextFetchCursor = fetchResult.nextCursor
-			w.sampleLogError(fetchResult)
 		}
 		hasError = fetchResult.err != nil
 	}
@@ -308,9 +319,6 @@ func (w *LogShardConsumer) ProcessTask(fetchedData []LogData) {
 }
 
 func (w *LogShardConsumer) ShutDownTask() {
-	// 幂等保护：rebalance 期间 cleanConsumer 每 tick 都会对失去的 shard 调 shutdown()
-	// -> SHUTTING_DOWN -> go ShutDownTask()，不拦截会重复执行用户 processor.Shutdown 回调
-	// 并产生无意义 goroutine。
 	w.shutdownLock.Lock()
 	if w.shutDownTaskStarted {
 		w.shutdownLock.Unlock()
@@ -318,6 +326,22 @@ func (w *LogShardConsumer) ShutDownTask() {
 	}
 	w.shutDownTaskStarted = true
 	w.shutdownLock.Unlock()
+
+	// 等待在途 ProcessTask 完成后再 flush checkpoint，避免数据丢失
+	deadline := time.Now().Add(10 * time.Second)
+	for w.taskIsExist && time.Now().Before(deadline) {
+		if len(w.taskResultChannel) != 0 {
+			result, ok := <-w.taskResultChannel
+			if ok && result != nil {
+				w.lastTaskResult = result
+			}
+			break
+		}
+		if w.lastTaskResult != nil {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 
 	err := w.processor.Shutdown(w.checkpointTracker)
 	if flushErr := w.checkpointTracker.flushCheckpoint(); flushErr != nil {
@@ -328,10 +352,6 @@ func (w *LogShardConsumer) ShutDownTask() {
 	w.sendTaskResult(&TaskResult{
 		err: err,
 	})
-	// 注意：不再 close 两个 result channel。
-	// 关闭 channel 后，仍在运行的 InitializeTask/ProcessTask/LogConsumerFetchTask
-	// 向已关闭 channel 发送会触发 panic: send on closed channel（线上崩溃根因）。
-	// channel 随 shard consumer 被 cleanConsumer 清理后一起被 GC，无泄漏。
 }
 
 func (w *LogShardConsumer) LogConsumerFetchTask() {
