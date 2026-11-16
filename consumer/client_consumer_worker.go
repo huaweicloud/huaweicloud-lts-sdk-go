@@ -46,8 +46,12 @@ func (w *ClientConsumerWorker) Run() {
 					consumer := w.consumerForShard(shard)
 					consumer.consume()
 				}
-				w.cleanConsumer(w.logConsumerHeartBeat.currentHeldShards)
+				shardToUnload := w.cleanConsumer(w.logConsumerHeartBeat.currentHeldShards)
 				w.logConsumerHeartBeat.lock.Unlock()
+				// unsubscribe 内部会加心跳锁，必须在解锁后调用以避免自我死锁
+				if len(shardToUnload) != 0 {
+					w.logConsumerHeartBeat.unsubscribe(shardToUnload)
+				}
 			} else {
 				break
 			}
@@ -97,7 +101,7 @@ func (w *ClientConsumerWorker) getLogShardConsumer(shardId string) *LogShardCons
 	return consumer
 }
 
-func (w *ClientConsumerWorker) cleanConsumer(ownedShard map[string]string) {
+func (w *ClientConsumerWorker) cleanConsumer(ownedShard map[string]string) map[string]string {
 	shardToUnload := make(map[string]string)
 	for shardId, consumer := range w.shardConsumer {
 		if _, ok := ownedShard[shardId]; ok {
@@ -118,9 +122,8 @@ func (w *ClientConsumerWorker) cleanConsumer(ownedShard map[string]string) {
 			shardToUnload[shard] = ""
 		}
 	}
-	if len(shardToUnload) != 0 {
-		w.logConsumerHeartBeat.unsubscribe(shardToUnload)
-	}
+	// 返回 shardToUnload，由 Run 在解锁后调用 unsubscribe（锁内调用会自我死锁）
+	return shardToUnload
 }
 
 func (w *ClientConsumerWorker) Shutdown() {
